@@ -32,6 +32,8 @@ var messages = [];
 
 var requestHandler = function(request, response) {
 
+  console.log("\n\n\nGOOGLE TEAM IN THE HOUSE!\n\n\n");
+
   // basic parts
   var headers = request.headers;
   var method = request.method;
@@ -40,10 +42,11 @@ var requestHandler = function(request, response) {
   var statusCode = 200;
 
 
-  if ( request.url === '/classes/messages' ) {
+  if ( request.url.match('/classes/messages') ) {
 
     request.on('error', function(err) {
       // ERROR ON REQUESTING
+      console.log("ERRROR",err)
       statusCode = 404;
     });
 
@@ -73,6 +76,7 @@ var requestHandler = function(request, response) {
 
   } else {
 
+    console.log("ELSE ERRROR",request.url, Object.keys(request) )
     response.statusCode = 404;
     response.end();
   }

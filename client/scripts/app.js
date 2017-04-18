@@ -12,12 +12,17 @@ $(document).ready(function() {
   App.prototype.init = function() {
 
     // console.log("Initializing App...");
-
+    var app = this;
     this.fetch();
+    console.log("OUTSIDE THIS IS",this)
 
-
-    $('body').on('click', '.username', this.handleUsernameClick);
-    $('.submit').on('click submit', this.handleSubmit);
+    $('body').on('click', '.username', function(e){
+      app.handleUsernameClick();
+    });
+    
+    $('.submit').on('click submit', function(e){
+      app.handleSubmit();
+    });
 
     // adding rooms
     $('#addNewRoom').on('keyup',function(e){
@@ -29,7 +34,6 @@ $(document).ready(function() {
         app.renderRoom(room);
         $('#roomSelect').val(room);
         app.room = room;
-        app.currentServer = app.server + app.room;
       }
     });
 
@@ -41,10 +45,10 @@ $(document).ready(function() {
       app.renderRoom(room);
     });
 
-      // create compose
-      var $compose_field = $('<div id="composing" class="placeholder" contenteditable="true" role="textbox"></div>');
-      $compose_field.appendTo($('#compose'));
-      $compose_field.on('keyup', function(e) {
+    // create compose
+    var $compose_field = $('<div id="composing" class="placeholder" contenteditable="true" role="textbox"></div>');
+    $compose_field.appendTo($('#compose'));
+    $compose_field.on('keyup', function(e) {
 
       // make compose send on return key
       var code = (e.keyCode ? e.keyCode : e.which);
@@ -54,7 +58,7 @@ $(document).ready(function() {
       // this.room = $("#roomSelect :selected").val();
       // $('#chatroomServer').html( this.room );
 
-  });
+    });
 
     // <script>
     //   $('body').css('overflow','hidden !important');
@@ -67,32 +71,35 @@ $(document).ready(function() {
   App.prototype.send = function(data) {
 
     var app = this;
-    // console.log("this",this.server)
+
+
     $.ajax({
       type: 'POST',
-      url: 'http://127.0.0.1:3000/classes/messages',
+      url: app.server,
       // crossServer: true,
       data: JSON.stringify(data),
       contentType: 'application/json',
       success: function() {
-        console.log('chatterbox: Message sent');
+        console.log('chatterbox: Message sent, getting feed');
+        app.fetch();
       },
       error: function() {
         console.log('chatterbox: Message was not sent');
       }
     });
+
     console.log("sent")
+    
   };
 
   App.prototype.getFeed = function(messages) {
+    app.clearMessages();
     messages.forEach(function(message) {
       if (!app.rooms.includes(message.roomname)){
         app.addRoom(message.roomname);
       }
       app.renderMessage(message);
     });
-
-
   };
 
   App.prototype.sanitize = function(string) {
@@ -154,7 +161,7 @@ $(document).ready(function() {
 
         success: function(data) {
           // remember to store the rooms!
-
+          console.log("-----> starting success",data);
           /*
             username
             text
@@ -191,43 +198,60 @@ $(document).ready(function() {
 
             } else {
 
-              // on fetch, grab the message id of the last message we have stored
-              var lastMessage = app.messages[app.messages.length-1];
-              // console.log("lastMessage",lastMessage);
+              console.log("CURRENT MESSAGES",app.messages)
+              // app.messages.concat(data.results);
+              // data.results.forEach(function(m){
+              //   app.messages.push(m);
+              // });
+              app.messages = data.results;
+              // render
+              console.log("AFTER MESSAGES",app.messages)
+              app.getFeed(app.messages);
 
-              // find the index of that message in the data.messages 
-              var messages = data.results.sort(function(a,b){ return a.createdAt - b.createdAt  ; });
-              var matchLastMessageIndex;
-
-              messages.forEach(function(message,index){
-                if ( message.objectId === lastMessage.objectId ){ matchLastMessageIndex = index; }
-              });
-
-              // slice the messages from that index to newest
-              var newMessages = messages.reverse().slice(matchLastMessageIndex+1);
-              // console.log("newMessages",newMessages);
-
-              newMessages.forEach(function(message,index){
-
-                // push to our arr
-                app.messages.push(message);
-
-                // save room
-                if (!app.rooms.includes(message.roomname)){
-                  // app.renderRoom(message.roomname);
-                  // console.log(app.rooms, message.roomname)
-                  app.addRoom(message.roomname);
-                }
-                // render it
-                app.renderMessage(message);
-              });
-              // push only that group to our messages
-
-              // cap our messages at 100
-              app.messages.slice(0,100);
             }
 
-          } else { console.log("No data results", data); }
+            // NOT WORKING
+            // else {
+
+            //   // on fetch, grab the message id of the last message we have stored
+            //   var lastMessage = app.messages[app.messages.length-1];
+            //   // console.log("lastMessage",lastMessage);
+
+            //   // find the index of that message in the data.messages 
+            //   var messages = data.results.sort(function(a,b){ return a.createdAt - b.createdAt  ; });
+            //   var matchLastMessageIndex;
+
+            //   messages.forEach(function(message,index){
+            //     if ( message.objectId === lastMessage.objectId ){ matchLastMessageIndex = index; }
+            //   });
+
+            //   // slice the messages from that index to newest
+            //   var newMessages = messages.slice(matchLastMessageIndex+1);
+            //   // console.log("newMessages",newMessages);
+
+            //   newMessages.forEach(function(message,index){
+
+            //     // push to our arr
+            //     app.messages.push(message);
+
+            //     // save room
+            //     if (!app.rooms.includes(message.roomname)){
+            //       // app.renderRoom(message.roomname);
+            //       // console.log(app.rooms, message.roomname)
+            //       app.addRoom(message.roomname);
+            //     }
+            //     // render it
+            //     app.renderMessage(message);
+            //   });
+            //   // push only that group to our messages
+
+            //   // cap our messages at 100
+            //   app.messages.slice(0,100);
+            // }
+
+          } else { 
+            console.log("No data results", data); 
+          }
 
           // console.log(context.messages.length,"got messages");
 
@@ -235,10 +259,13 @@ $(document).ready(function() {
           // render Messages
           // check for all rooms, render rooms message.roomname
 
+          console.log("-----> ending success",data);
+          console.log("=====> client saved data: ", app.messages)
         },
 
         error: function(err) {
           console.log('chatterbox: Message was not fetched', err);
+          console.log('get All response Headers', err.getAllResponseHeaders);
         }
 
       });
@@ -307,10 +334,10 @@ $(document).ready(function() {
   App.prototype.handleUsernameClick = function(event) {
 
     var username = $(this).data('username');
-    if (!app.friends.includes(username)) {
-      app.friends.push(username);
+    if (!this.friends.includes(username)) {
+      this.friends.push(username);
     }
-    console.log("friends", app.friends);
+    console.log("friends", this.friends);
 
   };
 
@@ -328,7 +355,8 @@ $(document).ready(function() {
     // erase textbox
     $('#composing').text('');
     console.log(message);
-    App.prototype.send(message);
+    this.send(message);
+
   };
 
 
