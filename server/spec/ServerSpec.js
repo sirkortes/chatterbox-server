@@ -116,4 +116,32 @@ describe('Node Server Request Listener Function', function() {
       });
   });
 
+  it('Should return error when sending unknown method', function() {
+    var req = new stubs.request('/classes/messages', 'SHIT');
+    var res = new stubs.response();
+
+    handler.requestHandler(req, res);
+
+    // Wait for response to return and then check status code
+    waitForThen(
+      function() { return res._ended; },
+      function() {
+        expect(res._responseCode).to.equal(405);
+      });
+  });
+
+  it('Should return error when sending different data type', function() {
+    var req = new stubs.request('/classes/messages', 'POST', 123456);
+    var res = new stubs.response();
+
+    handler.requestHandler(req, res);
+
+    // Wait for response to return and then check status code
+    waitForThen(
+      function() { return res._ended; },
+      function() {
+        expect(res._responseCode).to.equal(400);
+      });
+  });
+
 });
