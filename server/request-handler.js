@@ -1,3 +1,4 @@
+var fs = require('fs');
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -41,12 +42,14 @@ var requestHandler = function(request, response) {
   var results = messages;
   var statusCode = 200;
 
-
-  if ( request.url.match('/classes/messages') ) {
-
+  // || request.url.includes('/?username') 
+  // console.log("MATCHING",request.url,request.url.match('/classes/messages'))
+  if ( request.url.includes('classes/messages') ) {
+    
+    // return;
     request.on('error', function(err) {
       // ERROR ON REQUESTING
-      console.log("ERRROR",err)
+      // console.log("ERRROR",err)
       statusCode = 404;
     });
 
@@ -74,12 +77,49 @@ var requestHandler = function(request, response) {
       response.end(JSON.stringify(responseBody));
     });
 
-  } else {
+
+
+  }
+
+  else if ( request.url[0] === "/" ){
+
+      // console.log("\n\n\nHEADERS",request.headers.accept)
+      // console.log("HOME URL",request)
+
+      var first = true;
+
+      if ( first ){
+
+        first = false;
+        fs.readFile("client/index.html", function(err, text) {
+          response.setHeader("Content-Type", request.headers.accept);
+
+          console.log("\n\n\nHEADERS",response._headers )
+
+          response.end(text.toString());
+        })
+        
+      } else {
+
+        fs.readFile(("client/"+request.url), function(err, text) {
+          response.setHeader("Content-Type", request.headers.accept );
+
+          console.log("\n\n\nHEADERS",response._headers )
+
+          response.end(text.toString());
+        })
+
+      }
+
+  }
+
+  else {
 
     console.log("ELSE ERRROR",request.url, Object.keys(request) )
     response.statusCode = 404;
     response.end();
   }
+
 };
 
 module.exports.requestHandler = requestHandler;
